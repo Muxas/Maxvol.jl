@@ -1,0 +1,7 @@
+name = "Maxvol"
+uuid = "4cc553b9-be87-484b-81d9-b5ae2a4e3958"
+authors = ["Aleksandr Mikhalev <mikhalev@mathcces.rwth-aachen.de>"]
+version = "0.1.0"
+
+[deps]
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"

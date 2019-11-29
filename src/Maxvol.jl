@@ -1,3 +1,5 @@
+module Maxvol
+
 import LinearAlgebra.LAPACK.getrf!
 import LinearAlgebra.BLAS.trsm!
 import LinearAlgebra.BLAS.ger!
@@ -175,4 +177,6 @@ function maxvol!(A::Matrix{T}, tol::Float64=1.05, maxiters::Int=100) where
         end
     end
 end
+
+end # module Maxvol
 
