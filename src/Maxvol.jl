@@ -1,15 +1,43 @@
 module Maxvol
 
-import LinearAlgebra.LAPACK.getrf!
-import LinearAlgebra.BLAS.trsm!
-import LinearAlgebra.BLAS.ger!
-import LinearAlgebra.BLAS.iamax
+using LinearAlgebra.LAPACK: getrf!
+using LinearAlgebra.BLAS: trsm!, ger!, iamax
+
+export maxvol_generic!, maxvol!
 
 """
-Generic maxvol
+    maxvol_generic!(A, tol=1.05, maxiters=100)
+
+Generic maxvol, that does not use any **BLAS** or **LAPACK** calls.
+
+Can be used for special arithmetics, like `BigFloat`, `Rational` or
+`Complex{Float16}`.
+
+# Arguments:
+- `A::Matrix`: input matrix on entry and output coefficients on exit.
+- `tol::Float64`: stop when determinant growth is less or equal to this.
+- `maxiters::Int`: maximum number of iterations.
+
+# Example:
+```julia
+julia> using Random, LinearAlgebra, Maxvol
+julia> rng = MersenneTwister(100);
+julia> A = rand(rng, BigFloat, 1000, 100);
+julia> C = copy(A);
+julia> piv = maxvol_generic!(C);
+julia> norm(A-C*A[piv,:]) / norm(A)
+2.030657951400512330834848952202721164346464876711701213634530270353170311161736e-76
+julia> A = rand(rng, ComplexF64, 1000, 100);
+julia> C = copy(A);
+julia> piv = maxvol_generic!(C);
+julia> norm(A-C*A[piv,:]) / norm(A)
+4.863490630095799e-15
+```
+
+# See also: [`maxvol!`](@ref)
 """
-function maxvol_generic!(A::Matrix{T}, tol::Float64=1.05, maxiters::Int=100) where
-        T <: Number
+function maxvol_generic!(A::Matrix{T}, tol::Float64=1.05,
+                         maxiters::Int=100) where T <: Number
     # Check input parameters
     if tol < 1
         throw(ArgumentError("Parameter `tol` must be at least 1.0"))
@@ -118,7 +146,36 @@ function maxvol_generic!(A::Matrix{T}, tol::Float64=1.05, maxiters::Int=100) whe
 end
 
 """
-LAPACK-based maxvol
+    maxvol!(A, tol=1.05, maxiters=100)
+
+Uses vendor-optimized LAPACK, provided by Julia.
+
+Supports only 4 input types: `Float32` (single), `Float64` (double),
+`ComplexF32` (single complex) and `ComplexF64` (double complex).
+
+# Arguments:
+- `A::Matrix{T}`: input matrix on entry and output coefficients on exit. `T`
+    must be one of `Float32`, `Float64`, `ComplexF32` and `ComplexF64`.
+- `tol::Float64`: stop when determinant growth is less or equal to this.
+- `maxiters::Int`: maximum number of iterations.
+
+# Example:
+```julia
+julia> using Random, LinearAlgebra, Maxvol
+julia> rng = MersenneTwister(100);
+julia> A = rand(rng, Float64, 1000, 100);
+julia> C = copy(A);
+julia> piv = maxvol!(C);
+julia> norm(A-C*A[piv,:]) / norm(A)
+2.3975097489579994e-15
+julia> A = rand(rng, ComplexF32, 1000, 100);
+julia> C = copy(A);
+julia> piv = maxvol_generic!(C);
+julia> norm(A-C*A[piv,:]) / norm(A)
+2.0852597f-6
+```
+
+# See also: [`maxvol_generic!`](@ref)
 """
 function maxvol!(A::Matrix{T}, tol::Float64=1.05, maxiters::Int=100) where
         T <: Union{Float32, Float64, ComplexF32, ComplexF64}
