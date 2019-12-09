@@ -14,9 +14,13 @@ Can be used for special arithmetics, like `BigFloat`, `Rational` or
 `Complex{Float16}`.
 
 # Arguments:
-- `A::Matrix`: input matrix on entry and output coefficients on exit.
-- `tol::Float64`: stop when determinant growth is less or equal to this.
-- `maxiters::Int`: maximum number of iterations.
+- `A::Matrix`: Input matrix on entry and output coefficients on exit.
+- `tol::Float64`: Stop when determinant growth is less or equal to this.
+- `maxiters::Int`: Maximum number of iterations.
+
+# Returns:
+- `piv::Vector{Int}`: Indexes of pivoted rows
+- `niters::Int`: Number of performed swap iterations
 
 # Example:
 ```julia
@@ -24,12 +28,12 @@ julia> using Random, LinearAlgebra, Maxvol
 julia> rng = MersenneTwister(100);
 julia> A = rand(rng, BigFloat, 1000, 100);
 julia> C = copy(A);
-julia> piv = maxvol_generic!(C);
+julia> piv, niters = maxvol_generic!(C);
 julia> norm(A-C*A[piv,:]) / norm(A)
 2.030657951400512330834848952202721164346464876711701213634530270353170311161736e-76
 julia> A = rand(rng, ComplexF64, 1000, 100);
 julia> C = copy(A);
-julia> piv = maxvol_generic!(C);
+julia> piv, niters = maxvol_generic!(C);
 julia> norm(A-C*A[piv,:]) / norm(A)
 4.863490630095799e-15
 ```
@@ -61,6 +65,11 @@ function maxvol_generic!(A::Matrix{T}, tol::Float64=1.05,
                 maxi = i
                 maxv = tmpv
             end
+        end
+        # Throw error if maximum value is 0. This happens only in case of
+        # singular matrix
+        if maxv == 0
+            throw(ArgumentError("Input `A` was a singular matrix"))
         end
         # Swap j-th and maxi-th rows
         if maxi != j
@@ -112,7 +121,7 @@ function maxvol_generic!(A::Matrix{T}, tol::Float64=1.05,
     end
     # Exit if maxiters is 0
     if maxiters == 0
-        return basis[1:r]
+        return basis[1:r], 0
     end
     iter::Int = 0
     while true
@@ -140,7 +149,7 @@ function maxvol_generic!(A::Matrix{T}, tol::Float64=1.05,
         end
         iter += 1
         if (maxi == -1) || (iter == maxiters)
-            return basis[1:r]
+            return basis[1:r], iter
         end
     end
 end
@@ -154,10 +163,14 @@ Supports only 4 input types: `Float32` (single), `Float64` (double),
 `ComplexF32` (single complex) and `ComplexF64` (double complex).
 
 # Arguments:
-- `A::Matrix{T}`: input matrix on entry and output coefficients on exit. `T`
+- `A::Matrix{T}`: Input matrix on entry and output coefficients on exit. `T`
     must be one of `Float32`, `Float64`, `ComplexF32` and `ComplexF64`.
-- `tol::Float64`: stop when determinant growth is less or equal to this.
-- `maxiters::Int`: maximum number of iterations.
+- `tol::Float64`: Stop when determinant growth is less or equal to this.
+- `maxiters::Int`: Maximum number of iterations.
+
+# Returns:
+- `piv::Vector{Int}`: Indexes of pivoted rows
+- `niters::Int`: Number of performed swap iterations
 
 # Example:
 ```julia
@@ -165,12 +178,12 @@ julia> using Random, LinearAlgebra, Maxvol
 julia> rng = MersenneTwister(100);
 julia> A = rand(rng, Float64, 1000, 100);
 julia> C = copy(A);
-julia> piv = maxvol!(C);
+julia> piv, niters = maxvol!(C);
 julia> norm(A-C*A[piv,:]) / norm(A)
 2.3975097489579994e-15
 julia> A = rand(rng, ComplexF32, 1000, 100);
 julia> C = copy(A);
-julia> piv = maxvol_generic!(C);
+julia> piv, niters = maxvol_generic!(C);
 julia> norm(A-C*A[piv,:]) / norm(A)
 2.0852597f-6
 ```
@@ -190,6 +203,11 @@ function maxvol!(A::Matrix{T}, tol::Float64=1.05, maxiters::Int=100) where
     N, r = size(A)
     basis::Vector{typeof(N)} = 1 : N
     A, ipiv, info = getrf!(A)
+    # Throw error if info is not 0. This happens only in case of
+    # singular matrix
+    if info != 0
+        throw(ArgumentError("Input `A` was a singular matrix"))
+    end
     # Compute basis rows
     for i = 1 : r
         if ipiv[i] != i
@@ -213,7 +231,7 @@ function maxvol!(A::Matrix{T}, tol::Float64=1.05, maxiters::Int=100) where
     end
     # Exit if maxiters is 0
     if maxiters == 0
-        return basis[1:r]
+        return basis[1:r], 0
     end
     iter::Int = 0
     while true
@@ -230,7 +248,7 @@ function maxvol!(A::Matrix{T}, tol::Float64=1.05, maxiters::Int=100) where
         end
         iter += 1
         if (maxv <= tol) || (iter == maxiters)
-            return basis[1:r]
+            return basis[1:r], iter
         end
     end
 end
