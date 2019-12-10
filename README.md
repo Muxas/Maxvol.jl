@@ -50,4 +50,4 @@ julia> Pkg.add("https://github.com/muxas/maxvol.jl")
 
 # Documentation
 
-Is available online. Link will be provided later.
+Is available online [here](https://muxas.github.io/Maxvol.jl/).
