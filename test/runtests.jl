@@ -1,3 +1,10 @@
+# @copyright (c) 2019 RWTH Aachen. All rights reserved.
+#
+# @file test/runtests.jl
+# @version 1.0.0
+# @author Aleksandr Mikhalev
+# @date 2019-12-10
+
 using Maxvol, LinearAlgebra, Random, Test
 
 # Size and number of test matrices

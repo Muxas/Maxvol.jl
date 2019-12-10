@@ -1,3 +1,10 @@
+# @copyright (c) 2019 RWTH Aachen. All rights reserved.
+#
+# @file src/Maxvol.jl
+# @version 1.0.0
+# @author Aleksandr Mikhalev
+# @date 2019-12-10
+
 module Maxvol
 
 using LinearAlgebra.LAPACK: getrf!
@@ -183,7 +190,7 @@ julia> norm(A-C*A[piv,:]) / norm(A)
 2.3975097489579994e-15
 julia> A = rand(rng, ComplexF32, 1000, 100);
 julia> C = copy(A);
-julia> piv, niters = maxvol_generic!(C);
+julia> piv, niters = maxvol!(C);
 julia> norm(A-C*A[piv,:]) / norm(A)
 2.0852597f-6
 ```
