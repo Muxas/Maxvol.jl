@@ -1,9 +1,9 @@
-# @copyright (c) 2019 RWTH Aachen. All rights reserved.
+# @copyright (c) 2019-2020 RWTH Aachen. All rights reserved.
 #
 # @file test/runtests.jl
 # @version 1.0.0
 # @author Aleksandr Mikhalev
-# @date 2019-12-10
+# @date 2020-02-06
 
 using Maxvol, LinearAlgebra, Random, Test
 
@@ -77,5 +77,61 @@ for T in types
     println("    ", T)
     A = ones(T, nrows, ncols)
     @test_throws ArgumentError Maxvol.maxvol_generic!(A, tol, maxiters)
+end
+
+# Parameters for rect_maxvol
+tol = 1.0
+# Set random seed
+rng = Random.MersenneTwister(100)
+
+# Lapack-based Rect_maxvol
+println("Testing LAPACK-based Rect_maxvol")
+types = [Float32, Float64, ComplexF32, ComplexF64]
+for T in types
+    println("    ", T)
+    # Generate orthogonal/unitary input
+    A = Matrix(qr(randn(rng, T, nrows, ncols)).Q)
+    piv, C = Maxvol.rect_maxvol(A, tol)
+    @test A ≈ C*A[piv,:]
+    # Check that norm of each row of C is less than tol
+    @test all([norm(C[i,:]) <= tol for i=1:nrows])
+end
+
+# Lapack-based Rect_maxvol does not exist for certain types
+types = [Float16, BigFloat, ComplexF16, Complex{BigFloat}, Int]
+for T in types
+    println("    ", T)
+    A = zeros(T, nrows, ncols)
+    @test_throws MethodError Maxvol.rect_maxvol(A, tol)
+end
+
+# Lapack-based Rect_maxvol throws ArgumentError if input is singular matrix
+types = [Float32, Float64, ComplexF32, ComplexF64]
+for T in types
+    println("    ", T)
+    A = ones(T, nrows, ncols)
+    @test_throws ArgumentError Maxvol.rect_maxvol(A, tol)
+end
+
+# Generic Rect_maxvol
+println("Testing Generic Rect_maxvol")
+types = [Float16, Float32, Float64, BigFloat, ComplexF16, ComplexF32,
+         ComplexF64, Complex{BigFloat}]
+for T in types
+    println("    ", T)
+    A = Matrix(qr(rand(rng, T, nrows, ncols)).Q)
+    piv, C = Maxvol.rect_maxvol_generic(A, tol)
+    @test A ≈ C*A[piv,:]
+    # Check that norm of each row of C is less than tol
+    @test all([norm(C[i,:]) <= tol for i=1:nrows])
+end
+
+# Generic Rect_maxvol throws ArgumentError if input is singular matrix
+types = [Float16, Float32, Float64, BigFloat, ComplexF16, ComplexF32,
+         ComplexF64, Complex{BigFloat}]
+for T in types
+    println("    ", T)
+    A = ones(T, nrows, ncols)
+    @test_throws ArgumentError Maxvol.rect_maxvol_generic(A, tol)
 end
 
